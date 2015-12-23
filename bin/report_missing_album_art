@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+
+require 'pp'
+## KNOWN ISSUES
+# does not find album art in folders that use []
+
+MUSIC_FOLDER = ARGV[0]
+# expects MUSIC/FOLDER/ARTIST/YEAR-ALBUM/TRACKS
+
+if MUSIC_FOLDER.nil?
+  puts "Usage: \n   #{__FILE__} path/to/music"
+  exit(-1)
+end
+
+v2 = ARGV[1]
+
+
+puts "Searching in #{MUSIC_FOLDER}"
+puts "Albums with missing Album Art are : "
+
+artists = Dir.glob(MUSIC_FOLDER + '*').select {|f| File.directory? f}
+
+artists.each do |artist_path|
+  artist = File.basename( artist_path )
+
+  albums = Dir.glob( File.join(artist_path, '*') ).select {|f| File.directory? f}
+  albums.each do |album_path|
+    album_filename = File.basename( album_path )
+
+    ## Take Album folder name and parse it to year and actual name
+    match = album_filename.match(/([0-9]*)\s?-\s?(.*)/)
+    album_year = match[1]
+    album      = match[2]
+
+    art =  Dir.glob( File.join(album_path, 'covers*' ) )
+    art = art.concat( Dir.glob( File.join(album_path, 'folder*' ) ) )
+    if art.empty?
+      puts "  #{artist} - #{album_year} - #{album}"
+    end
+
+  end # Album  Iterator
+end   # Artist Iterator
+

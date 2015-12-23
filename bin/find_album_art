@@ -1,0 +1,67 @@
+#!/usr/bin/env ruby
+
+MUSIC_FOLDER = ARGV[0]
+# expects MUSIC/FOLDER/ARTIST/YEAR-ALBUM/TRACKS
+
+if MUSIC_FOLDER.nil?
+  puts "Usage: \n   #{__FILE__} path/to/music"
+  exit(-1)
+end
+
+v2 = ARGV[1]
+
+require 'pp'
+#Small function to run a command and output return values
+def do_and_report(command)
+   f = open("| #{command}")
+   g = Array.new
+   while (foo = f.gets)
+      g << foo
+   end
+   g.each do |element|
+      puts element
+   end
+end
+
+puts "Searching in #{MUSIC_FOLDER}"
+
+#Get all sub **Folders**
+artists = Dir.glob(MUSIC_FOLDER + '*').select {|f| File.directory? f}
+
+artists.each do |artist_path|
+  artist = File.basename( artist_path )
+  puts artist
+
+  albums = Dir.glob( File.join(artist_path, '*') ).select {|f| File.directory? f}
+  albums.each do |album_path|
+    begin
+    album_filename = File.basename( album_path )
+
+    match = album_filename.match(/([0-9]*)\s?-\s?(.*)/)
+    #match = album_filename.match(/([0-9]*)-(.*)/)
+    #pp match
+    album_year = match[1]
+    album      = match[2]
+
+    puts "  #{artist} - #{album_year} - #{album}"
+
+    art =  Dir.glob( File.join(album_path, 'covers*' ) )
+    art = art.concat( Dir.glob( File.join(album_path, 'folder*' ) ) )
+    if art.empty?
+
+
+      # Get covers
+      # glyrc cover --artist Equilibrium --album Sagas --write 'cover.:format:'
+      cmd = %{ glyrc cover --artist "#{artist}" --album "#{album}" --write "#{album_path}/folder.:format:" --formats "jpg;jpeg"}
+      puts cmd
+      do_and_report( cmd )
+    end
+    rescue
+
+      STDERR.puts "Trying to Read #{album_path}"
+     exit(-2)
+    end
+
+  end # Album  Iterator
+end   # Artist Iterator
+
